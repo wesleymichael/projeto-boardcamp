@@ -2,7 +2,10 @@ import { db } from "../database/database.connection.js";
 
 export async function getCustomers(req, res){
     try{
-        const customers = await db.query(`SELECT * FROM customers;`);
+        const customers = await db.query(`
+            SELECT id, name, phone, cpf, TO_CHAR(birthday, 'YYYY-MM-DD') AS birthday
+                FROM customers;
+        `);
         res.send(customers.rows)
     } catch (error){
         res.status(500).send(error.message);
@@ -15,7 +18,10 @@ export async function getCustomersById(req, res){
     if(isNaN(id)) return res.sendStatus(400);
     
     try{
-        const customer = await db.query(`SELECT * FROM customers WHERE id=$1;`, [id]);
+        const customer = await db.query(`
+            SELECT id, name, phone, cpf, TO_CHAR(birthday, 'YYYY-MM-DD') AS birthday
+                FROM customers WHERE id=$1;
+        `, [id]);
 
         if(customer.rowCount === 0) return res.sendStatus(404);
 
@@ -52,7 +58,7 @@ export async function updateCustomer(req, res){
         const customer = await db.query(`SELECT * FROM customers WHERE id = $1;`, [id]);
         if (customer.rows[0].cpf !== cpf) return res.status(409).send("CPF does not belong to the user");
 
-        const update = await db.query(`
+        await db.query(`
             UPDATE customers 
                 SET "name"=$1, "phone"=$2, "cpf"=$3, "birthday"=$4
                 WHERE id = $5;`,
