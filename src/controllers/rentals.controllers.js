@@ -1,4 +1,5 @@
 import { db } from "../database/database.connection.js";
+import moment from "moment";
 
 export async function getRentals(req, res){
     try{
@@ -31,4 +32,47 @@ export async function insertRental(req, res){
     } catch (error) {
         res.status(500).send(error.message);
     }
+}
+
+export async function finalizeRental(req, res){
+    const id = parseInt(req.params.id);
+
+    if(isNaN(id)) return res.sendStatus(400);
+
+    try{
+        const { rows } = await db.query(`
+            SELECT TO_CHAR(rentals."rentDate", 'YYYY-MM-DD') AS "rentDate", "daysRented",
+                json_build_object('id', games.id, 'pricePerDay', games."pricePerDay") AS "game"
+                FROM rentals
+                JOIN games ON rentals."gameId" = games.id
+                WHERE rentals.id = $1;
+        `,  [id]);
+        const rental = rows[0];
+
+        if (rows.length === 0) return res.sendStatus(404);
+        if (rental.returnDate) return res.sendStatus(400);
+
+        const delayInDays = Math.max( dateDiff(rental.rentDate) - rental.daysRented, 0);
+        const delayFee = delayInDays * rental.game.pricePerDay;
+
+        await db.query(`
+            UPDATE rentals 
+            SET "returnDate" = NOW(), "delayFee" = $1
+            WHERE rentals.id = $2;
+        `, [delayFee, id]);
+
+        res.sendStatus(200);
+    } catch (error) {
+        res.status(500).send(error.message);
+    }
+}
+
+function dateDiff(date){
+    const dateNow = new Date().toISOString().slice(0, 10);
+
+    const date1 = moment(date);
+    const date2 = moment(dateNow);
+    const diffInDays = date2.diff(date1, 'days');
+
+    return diffInDays;
 }
