@@ -41,7 +41,7 @@ export async function finalizeRental(req, res){
 
     try{
         const { rows } = await db.query(`
-            SELECT TO_CHAR(rentals."rentDate", 'YYYY-MM-DD') AS "rentDate", "daysRented",
+            SELECT TO_CHAR(rentals."rentDate", 'YYYY-MM-DD') AS "rentDate", "daysRented", "returnDate",
                 json_build_object('id', games.id, 'pricePerDay', games."pricePerDay") AS "game"
                 FROM rentals
                 JOIN games ON rentals."gameId" = games.id
