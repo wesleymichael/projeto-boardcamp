@@ -18,8 +18,8 @@ export async function rentalsValidation(req, res, next){
         const rentedGames = await db.query(`
             SELECT COUNT(*) FROM rentals WHERE "gameId" = $1 AND "returnDate" IS NULL;    
         `,[gameId]);
-        if(game.rows[0].stockTotal <= rentedGames.rowCount) return res.status(400).send("Out of stock");
-                
+        if(game.rows[0].stockTotal <= rentedGames.rows[0].count) return res.status(400).send("Out of stock");       
+        
         res.locals.game = game.rows[0];
         next();
 
