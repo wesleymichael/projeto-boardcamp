@@ -1,6 +1,16 @@
 import { db } from "../database/database.connection.js";
 import moment from "moment";
 
+function dateDiff(date){
+    const dateNow = new Date().toISOString().slice(0, 10);
+
+    const date1 = moment(date);
+    const date2 = moment(dateNow);
+    const diffInDays = date2.diff(date1, 'days');
+
+    return diffInDays;
+}
+
 export async function getRentals(req, res){
     try{
         const rentals = await db.query(`
@@ -67,12 +77,24 @@ export async function finalizeRental(req, res){
     }
 }
 
-function dateDiff(date){
-    const dateNow = new Date().toISOString().slice(0, 10);
+export async function deleteRental(req, res){
+    const id = parseInt(req.params.id);
 
-    const date1 = moment(date);
-    const date2 = moment(dateNow);
-    const diffInDays = date2.diff(date1, 'days');
+    if(isNaN(id)) return res.sendStatus(400);
 
-    return diffInDays;
+    try{
+        const rental = await db.query(`SELECT rentals."returnDate" FROM rentals WHERE id = $1`, [id]);
+
+        if( rental.rowCount === 0 ) return res.sendStatus(404);
+        if( rental.rows[0].returnDate === null ) return res.sendStatus(400);
+
+        await db.query(`
+            DELETE FROM rentals
+                WHERE id = $1 AND "delayFee" IS NOT NULL;
+        `, [id]);
+
+        res.sendStatus(200);
+    } catch (error){
+        res.status(500).send(error.message);
+    }
 }
