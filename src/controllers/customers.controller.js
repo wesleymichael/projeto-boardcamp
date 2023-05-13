@@ -55,8 +55,8 @@ export async function updateCustomer(req, res){
     if(isNaN(id)) return res.sendStatus(400);
 
     try{
-        const customer = await db.query(`SELECT * FROM customers WHERE id = $1;`, [id]);
-        if (customer.rows[0].cpf !== cpf) return res.status(409).send("CPF does not belong to the user");
+        const cpfIsUsed = await db.query(`SELECT * FROM customers WHERE id != $1 AND cpf = $2;`, [id, cpf]);
+        if (cpfIsUsed.rowCount !== 0) return res.status(409).send("CPF already registered");
 
         await db.query(`
             UPDATE customers 
