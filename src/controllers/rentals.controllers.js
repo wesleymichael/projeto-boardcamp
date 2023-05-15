@@ -15,6 +15,7 @@ export async function getRentals(req, res){
     try{
         const rentals = await db.query(`
             SELECT rentals.*, TO_CHAR(rentals."rentDate", 'YYYY-MM-DD') AS "rentDate", 
+                TO_CHAR(rentals."returnDate", 'YYYY-MM-DD') AS "returnDate",
                 json_build_object('id', customers.id, 'name', customers.name) AS "customer",
                 json_build_object('id', games.id, 'name', games.name) AS "game"
                 FROM rentals 
